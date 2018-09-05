@@ -52,10 +52,10 @@ is the vehicle starting offset of a straight line (reference). If the MPC implem
 Now the MPC controller is running and listening on port 4567 for messages from the simulator. Next step is to open Udacity's simulator:
 Using the left arrow, you need to go to the Project 5: MPC Controller:
 
-![Simulator first screen](images/capture_1.png)
+![Simulator first screen](images/capture_1.PNG)
 
 
-![Simulator MPC controller project](images/capture_2.png)
+![Simulator MPC controller project](images/capture_2.PNG)
 
 
 # [Rubic](https://review.udacity.com/#!/rubrics/896/view) points
@@ -99,26 +99,27 @@ Those values are considered the state of the model. In addition to that, `Lf` is
 
 The objective is to find the acceleration (`a`) and the steering angle(`delta`) in the way it will minimize an objective function that is the combination of different factors:
 
-- Square sum of `cte` and `epsi`. It could be found [here](./src/MPC.cpp#L55).
-- Square sum of the difference actuators to penalize a lot of actuator's actions. It could be found [here](./src/MPC.cpp#L62).
-- Square sum of the difference between two consecutive actuator values to penalize sharp changes. It could be found [here](./src/MPC.cpp#L69).
+- Square sum of `cte` and `epsi`.
+- Square sum of the difference actuators to penalize a lot of actuator's actions.
+- Square sum of the difference between two consecutive actuator values to penalize sharp changes. 
+How much weight each of these factors had was tuned manually to obtain a successful track ride.
 
-How much weight each of these factors had were tuned manually to obtain a successful track ride without leaving the road.
+### Prediction Horizon, Timestep Length and Elapsed Duration (N & dt)
 
-### Timestep Length and Elapsed Duration (N & dt)
+The number N also determines the number of variables optmized by the controller. So, higher N will result in extra computational cost.
 
-The number of points(`N`) and the time interval(`dt`) define the prediction horizon. The number of points impacts the controller performance as well. I tried to keep the horizon around the same time the waypoints were on the simulator. With too many points the controller starts to run slower, and some times it went wild very easily. After trying with `N` from 10 to 20 and `dt` 100 to 500 milliseconds, I decided to leave them fixed to 10 and 100 milliseconds to have a better result tuning the other parameters.
+For this project, we followed an empirical approach of trial and error to choose the horizom values. We tried for N values between 10 and 20 and for dt 0.05 and 0.1. The best result was achieved with N=10 and dt=0.1. Values for dt smaller than 0.1 did not work, for instance N=20 and dt=0.05 resulted in a complete crash of the vehicle, In addition, our experiments showed that time horizom higher than 1 second did not improve the results and sometimes have even worsened the results. For instance, the time horizon of N=20 and dt=0.1 crash the car after a few seconds
 
 ### Polynomial Fitting and MPC Preprocessing
 
-The waypoints provided by the simulator are transformed to the car coordinate system at [./src/main.cpp](./src/main.cpp#L104) from line 104 to line 113. Then a 3rd-degree polynomial is fitted to the transformed waypoints. These polynomial coefficients are used to calculate the `cte` and `epsi` later on. They are used by the solver as well to create a reference trajectory.
+The waypoints provided by the simulator are transformed to the car coordinate system at [./src/main.cpp](./src/main.cpp#L107) from line 107 to line 116. Then a 3rd-degree polynomial is fitted to the transformed waypoints. These polynomial coefficients are used to calculate the `cte` and `epsi` later on. They are used as well to create a reference trajectory.
 
 ### Model Predictive Control with Latency
 
-To handle actuator latency, the state values are calculated using the model and the delay interval. These values are used instead of the initial one. The code implementing that could be found at [./src/main.cpp](./src/main.cpp#L121) from line 121 to line 139.
+To handle actuator latency, the state values are calculated using the model and the delay interval. These values are used instead of the initial one.
 
 ## Simulation
 
 ### The vehicle must successfully drive a lap around the track.
 
-The vehicle successfully drives a lap around the track. Here is a short video with the final parameters: [./videos/capture_vedio_1.mov](./videos/capture_vedio_1.mov).
+The vehicle successfully drives a lap around the track. Here is a short video with the final parameters: [./videos/capture_vedio_1.MOV](./videos/capture_vedio_1.MOV).
