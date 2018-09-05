@@ -116,7 +116,7 @@ The waypoints provided by the simulator are transformed to the car coordinate sy
 
 ### Model Predictive Control with Latency
 
-In order to deal with the latency, we have to predict the next state before calling the MPC solver. It can be acomplished using the Model equations
+In order to deal with the latency, we have to predict the next state before calling the MPC solver. It can be acheived using the Model equations
 
 ```
 dt = 0.1;
