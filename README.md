@@ -37,6 +37,7 @@ Self-Driving Car Engineer Nanodegree Program
 2. Make a build directory: `mkdir build && cd build`
 3. Compile: `cmake .. && make`
 4. Run it: `./mpc`.
+5. Make sure to set the LD_LIBRARY_PATH to /usr/local/lib incase of ubuntu bash setup
 
 ## Tips
 
@@ -48,61 +49,76 @@ is the vehicle starting offset of a straight line (reference). If the MPC implem
 4.  Tips for setting up your environment are available [here](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/0949fca6-b379-42af-a919-ee50aa304e6a/lessons/f758c44c-5e40-4e01-93b5-1a82aa4e044f/concepts/23d376c7-0195-4276-bdf0-e02f1f3c665d)
 5. **VM Latency:** Some students have reported differences in behavior using VM's ostensibly a result of latency.  Please let us know if issues arise as a result of a VM environment.
 
-## Editor Settings
+Now the MPC controller is running and listening on port 4567 for messages from the simulator. Next step is to open Udacity's simulator:
+Using the left arrow, you need to go to the Project 5: MPC Controller:
 
-We've purposefully kept editor configuration files out of this repo in order to
-keep it as simple and environment agnostic as possible. However, we recommend
-using the following settings:
+![Simulator first screen](images/capture_1.PNG)
 
-* indent using spaces
-* set tab width to 2 spaces (keeps the matrices in source code aligned)
 
-## Code Style
+![Simulator MPC controller project](images/capture_2.png)
 
-Please (do your best to) stick to [Google's C++ style guide](https://google.github.io/styleguide/cppguide.html).
 
-## Project Instructions and Rubric
+# [Rubic](https://review.udacity.com/#!/rubrics/896/view) points
 
-Note: regardless of the changes you make, your project must be buildable using
-cmake and make!
+## Compilation
 
-More information is only accessible by people who are already enrolled in Term 2
-of CarND. If you are enrolled, see [the project page](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/f1820894-8322-4bb3-81aa-b26b3c6dcbaf/lessons/b1ff3be0-c904-438e-aad3-2b5379f0e0c3/concepts/1a2255a0-e23c-44cf-8d41-39b8a3c8264a)
-for instructions and the project rubric.
+### Your code should compile.
 
-## Hints!
+The code compiles without errors or warnings. Additional libraries added for this project, Ipopt and CppAD.
 
-* You don't have to follow this directory structure, but if you do, your work
-  will span all of the .cpp files here. Keep an eye out for TODOs.
+## Implementation
 
-## Call for IDE Profiles Pull Requests
+### The Model
 
-Help your fellow students!
+The model used is a Kinematic model, Kinematic models are simplifications of dynamic models that ignore tire forces, gravity, and mass.
+This simplification reduces the accuracy of the models, but it also makes them more tractable.
 
-We decided to create Makefiles with cmake to keep this project as platform
-agnostic as possible. Similarly, we omitted IDE profiles in order to we ensure
-that students don't feel pressured to use one IDE or another.
+The model equations are as follow:
 
-However! I'd love to help people get up and running with their IDEs of choice.
-If you've created a profile for an IDE that you think other students would
-appreciate, we'd love to have you add the requisite profile files and
-instructions to ide_profiles/. For example if you wanted to add a VS Code
-profile, you'd add:
+```
+x[t] = x[t-1] + v[t-1] * cos(psi[t-1]) * dt
+y[t] = y[t-1] + v[t-1] * sin(psi[t-1]) * dt
+psi[t] = psi[t-1] + v[t-1] / Lf * delta[t-1] * dt
+v[t] = v[t-1] + a[t-1] * dt
+cte[t] = f(x[t-1]) - y[t-1] + v[t-1] * sin(epsi[t-1]) * dt
+epsi[t] = psi[t] - psides[t-1] + v[t-1] * delta[t-1] / Lf * dt
+```
 
-* /ide_profiles/vscode/.vscode
-* /ide_profiles/vscode/README.md
+Where:
 
-The README should explain what the profile does, how to take advantage of it,
-and how to install it.
+- `x, y` : Car's position.
+- `psi` : Car's heading direction.
+- `v` : Car's velocity.
+- `cte` : Cross-track error.
+- `epsi` : Orientation error.
 
-Frankly, I've never been involved in a project with multiple IDE profiles
-before. I believe the best way to handle this would be to keep them out of the
-repo root to avoid clutter. My expectation is that most profiles will include
-instructions to copy files to a new location to get picked up by the IDE, but
-that's just a guess.
+Those values are considered the state of the model. In addition to that, `Lf` is the distance between the car of mass and the front wheels (this is provided by Udacity's seed project). The other two values are the model output:
 
-One last note here: regardless of the IDE used, every submitted project must
-still be compilable with cmake and make./
+- `a` : Car's acceleration (throttle).
+- `delta` : Steering angle.
 
-## How to write a README
-A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
+The objective is to find the acceleration (`a`) and the steering angle(`delta`) in the way it will minimize an objective function that is the combination of different factors:
+
+- Square sum of `cte` and `epsi`. It could be found [here](./src/MPC.cpp#L55).
+- Square sum of the difference actuators to penalize a lot of actuator's actions. It could be found [here](./src/MPC.cpp#L62).
+- Square sum of the difference between two consecutive actuator values to penalize sharp changes. It could be found [here](./src/MPC.cpp#L69).
+
+How much weight each of these factors had were tuned manually to obtain a successful track ride without leaving the road.
+
+### Timestep Length and Elapsed Duration (N & dt)
+
+The number of points(`N`) and the time interval(`dt`) define the prediction horizon. The number of points impacts the controller performance as well. I tried to keep the horizon around the same time the waypoints were on the simulator. With too many points the controller starts to run slower, and some times it went wild very easily. After trying with `N` from 10 to 20 and `dt` 100 to 500 milliseconds, I decided to leave them fixed to 10 and 100 milliseconds to have a better result tuning the other parameters.
+
+### Polynomial Fitting and MPC Preprocessing
+
+The waypoints provided by the simulator are transformed to the car coordinate system at [./src/main.cpp](./src/main.cpp#L104) from line 104 to line 113. Then a 3rd-degree polynomial is fitted to the transformed waypoints. These polynomial coefficients are used to calculate the `cte` and `epsi` later on. They are used by the solver as well to create a reference trajectory.
+
+### Model Predictive Control with Latency
+
+To handle actuator latency, the state values are calculated using the model and the delay interval. These values are used instead of the initial one. The code implementing that could be found at [./src/main.cpp](./src/main.cpp#L121) from line 121 to line 139.
+
+## Simulation
+
+### The vehicle must successfully drive a lap around the track.
+
+The vehicle successfully drives a lap around the track. Here is a short video with the final parameters: [./videos/capture_vedio_1.mov](./videos/capture_vedio_1.mov).
