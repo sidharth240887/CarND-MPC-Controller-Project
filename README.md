@@ -52,7 +52,7 @@ is the vehicle starting offset of a straight line (reference). If the MPC implem
 Now the MPC controller is running and listening on port 4567 for messages from the simulator. Next step is to open Udacity's simulator:
 Using the left arrow, you need to go to the Project 5: MPC Controller:
 
-![Simulator first screen](images/capture_1.PNG)
+![Simulator first screen](images/capture_1.png)
 
 
 ![Simulator MPC controller project](images/capture_2.png)
