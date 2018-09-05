@@ -116,7 +116,15 @@ The waypoints provided by the simulator are transformed to the car coordinate sy
 
 ### Model Predictive Control with Latency
 
-To handle actuator latency, the state values are calculated using the model and the delay interval. These values are used instead of the initial one.
+In order to deal with the latency, we have to predict the next state before calling the MPC solver. It can be acomplished using the Model equations
+
+dt = 0.1;
+x1    = v * cos(0) * dt;
+y1    = v * sin(0) * dt;
+psi1  = - v/Lf * steer_value * dt;
+v1    = throttle_value * dt;
+cte1  =   v * sin(epsi1) * dt;
+epsi1 = - v * steer_value / Lf * dt;
 
 ## Simulation
 
