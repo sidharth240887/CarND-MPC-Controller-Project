@@ -105,7 +105,7 @@ No additional tuning is done.
 
 ### Prediction Horizon, Timestep Length and Elapsed Duration (N & dt)
 
-Final values for N and dt were reached with Trail and Error, With large value of timestamp and small value of duration, I saw some erroneous behaviours, With N value of 20 and dt value of 0.1 and a speed  of 30 mph, car was not moving properly on the trajectory.
+Final values for N and dt were reached with Trail and Error, With large value of timestamp and small value of duration, I saw some erroneous behaviours, With N value of 20 and dt value of 0.1 and a speed  of 35 mph, car was not moving properly on the trajectory.
 After some tries I tried N = 10 and dt = 0.2, vehicle seems stable with this configuration.
 
 ### Polynomial Fitting and MPC Preprocessing
