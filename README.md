@@ -86,49 +86,49 @@ epsi[t] = psi[t] - psides[t-1] + v[t-1] * delta[t-1] / Lf * dt
 
 Where:
 
-- `x, y` : Car's position.
+- `x` : Car's position in x trajectory.
+- `y` : Car's position in y trajectory.
 - `psi` : Car's heading direction.
-- `v` : Car's velocity.
+- `v` : Car velocity.
 - `cte` : Cross-track error.
 - `epsi` : Orientation error.
 
-Those values are considered the state of the model. In addition to that, `Lf` is the distance between the car of mass and the front wheels (this is provided by Udacity's seed project). The other two values are the model output:
+Actuator input :
+delta : Angle of the steering
+a :  Acceleration
 
-- `a` : Car's acceleration (throttle).
-- `delta` : Steering angle.
+Additional Tuning of the cost funtion is done to solve sudden steering spike problem: 
+fg[0] += 1000.0 * CppAD::pow(vars[delta_start + i + 1] - vars[delta_start + i], 2);
 
-The objective is to find the acceleration (`a`) and the steering angle(`delta`) in the way it will minimize an objective function that is the combination of different factors:
+No additional tuning is done.
 
-- Square sum of `cte` and `epsi`.
-- Square sum of the difference actuators to penalize a lot of actuator's actions.
-- Square sum of the difference between two consecutive actuator values to penalize sharp changes. 
-How much weight each of these factors had was tuned manually to obtain a successful track ride.
 
 ### Prediction Horizon, Timestep Length and Elapsed Duration (N & dt)
 
-The number N also determines the number of variables optmized by the controller. So, higher N will result in extra computational cost.
-
-For this project, we followed an empirical approach of trial and error to choose the horizom values. We tried for N values between 10 and 20 and for dt 0.05 and 0.1. The best result was achieved with N=10 and dt=0.1. Values for dt smaller than 0.1 did not work, for instance N=20 and dt=0.05 resulted in a complete crash of the vehicle, In addition, our experiments showed that time horizom higher than 1 second did not improve the results and sometimes have even worsened the results. For instance, the time horizon of N=20 and dt=0.1 crash the car after a few seconds
+Final values for N and dt were reached with Trail and Error, With large value of timestamp and small value of duration, I saw some erroneous behaviours, With N value of 20 and dt value of 0.1 and a speed  of 30 mph, car was not moving properly on the trajectory.
+After some tries I tried N = 10 and dt = 0.2, vehicle seems stable with this configuration.
 
 ### Polynomial Fitting and MPC Preprocessing
 
-The waypoints provided by the simulator are transformed to the car coordinate system at [./src/main.cpp](./src/main.cpp#L107) from line 107 to line 116.
-
+The waypoints provided by the simulator are transformed to the car cordinated using the below formula:
+```
+ptsx_trans( k ) = (ptsx[k] - px) * cos(psi) + (ptsy[k] - py) * sin(psi);
+ptsy_trans( k ) = (ptsy[k] - py) * cos(psi) - (ptsx[k] - px) * sin(psi);
+```
 A third degree polynomial was used to compute the trajectory of the car. Since most real world road scenarios will fit in this approach.
 
 
 ### Model Predictive Control with Latency
 
-In order to deal with the latency, we have to predict the next state before calling the MPC solver. It can be acheived using the Model equations
-
+In order to deal with the latency,which is quite possible in real world scnario, added delay of 100 m/s to the actuations.
+Below are the code changes to acheive this:
 ```
-dt = 0.1;
-x1    = v * cos(0) * dt;
-y1    = v * sin(0) * dt;
-psi1  = - v/Lf * steer_value * dt;
-v1    = throttle_value * dt;
-cte1  =   v * sin(epsi1) * dt;
-epsi1 = - v * steer_value / Lf * dt;
+double x_delay = (0 + v * delay)
+double y_delay = 0
+double psi_delay = 0 + v * delta / Lf * delay
+double v_delay =  0 + v + a * delay
+double cte_delay = cte + (v * sin(epsi) * delay)
+double epsi_delay = epsi + v * delta / Lf * delay
 ```
 ## Simulation
 
