@@ -112,7 +112,10 @@ For this project, we followed an empirical approach of trial and error to choose
 
 ### Polynomial Fitting and MPC Preprocessing
 
-The waypoints provided by the simulator are transformed to the car coordinate system at [./src/main.cpp](./src/main.cpp#L107) from line 107 to line 116. Then a 3rd-degree polynomial is fitted to the transformed waypoints. These polynomial coefficients are used to calculate the `cte` and `epsi` later on. They are used as well to create a reference trajectory.
+The waypoints provided by the simulator are transformed to the car coordinate system at [./src/main.cpp](./src/main.cpp#L107) from line 107 to line 116.
+
+A third degree polynomial was used to compute the trajectory of the car. Since most real world road scenarios will fit in this approach.
+
 
 ### Model Predictive Control with Latency
 
