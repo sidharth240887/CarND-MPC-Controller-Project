@@ -86,12 +86,12 @@ epsi[t] = psi[t] - psides[t-1] + v[t-1] * delta[t-1] / Lf * dt
 
 Where:
 
-- `x` : Car's position in x trajectory.
-- `y` : Car's position in y trajectory.
-- `psi` : Car's heading direction.
-- `v` : Car velocity.
-- `cte` : Cross-track error.
-- `epsi` : Orientation error.
+`x` : Car's position in x trajectory.
+`y` : Car's position in y trajectory.
+`psi` : Car's heading direction.
+`v` : Car velocity.
+`cte` : Cross-track error.
+`epsi` : Orientation error.
 
 Actuator input :
 delta : Angle of the steering
